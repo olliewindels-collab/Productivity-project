@@ -77,6 +77,34 @@
         </section>
     </div>
 
+    <!-- Exertion Rating Modal -->
+    <div id="ratingOverlay" class="rating-overlay hidden">
+        <div class="rating-modal">
+            <h3>Task Complete!</h3>
+            <div class="task-name" id="ratingTaskName">Task name</div>
+
+            <div class="rating-section">
+                <div class="rating-label">
+                    <span>How draining was this task?</span>
+                    <span class="rating-value" id="exertionValue">5</span>
+                </div>
+                <div class="rating-slider-container">
+                    <input type="range" id="exertionSlider" class="exertion-slider" min="1" max="10" value="5" step="1">
+                </div>
+                <div class="rating-scale">
+                    <span>Easy</span>
+                    <span>Moderate</span>
+                    <span>Exhausting</span>
+                </div>
+            </div>
+
+            <div class="rating-buttons">
+                <button onclick="skipRating()" class="btn btn-skip">Skip</button>
+                <button onclick="submitRating()" class="btn btn-submit-rating">Submit</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="schedule.js"></script>
     <script src="app.js"></script>

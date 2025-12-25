@@ -5,8 +5,12 @@ let appData = {
     todayPriorities: [],
     obligations: [],
     generatedSchedule: [],
-    taskHistory: [] // Store completed tasks with actual times for future estimates
+    taskHistory: [], // Store completed tasks with actual times for future estimates
+    exertionRatings: [] // Store exertion ratings with timestamps
 };
+
+// Track current task being rated
+let currentRatingTaskIndex = null;
 
 // ===== Initialize App =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,6 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = parseInt(e.target.value);
         const labels = ['Morning', 'Anytime', 'Evening'];
         timeLabel.textContent = `Preferred time: ${labels[value]}`;
+    });
+
+    // Initialize exertion slider
+    const exertionSlider = document.getElementById('exertionSlider');
+    const exertionValue = document.getElementById('exertionValue');
+
+    exertionSlider.addEventListener('input', (e) => {
+        exertionValue.textContent = e.target.value;
     });
 });
 
@@ -253,7 +265,8 @@ function generateSchedule() {
     appData.generatedSchedule = createOptimizedSchedule(
         appData.todayPriorities,
         appData.obligations,
-        appData.longTermPriorities
+        appData.longTermPriorities,
+        appData.exertionRatings
     );
 
     saveToStorage();
@@ -317,10 +330,23 @@ function renderSchedule() {
 }
 
 function toggleCheckbox(checkbox) {
+    const wasChecked = checkbox.classList.contains('checked');
     checkbox.classList.toggle('checked');
+
     // Add checkmark when checked
     if (checkbox.classList.contains('checked')) {
         checkbox.innerHTML = '✓';
+
+        // Get the task index from the parent element
+        const checklistItem = checkbox.closest('.checklist-item');
+        const allItems = Array.from(document.querySelectorAll('.checklist-item'));
+        const taskIndex = allItems.indexOf(checklistItem);
+
+        // Only show rating modal for actual tasks (not breaks or obligations)
+        const item = appData.generatedSchedule[taskIndex];
+        if (item && item.type === 'task' && !wasChecked) {
+            showRatingModal(taskIndex, item.title);
+        }
     } else {
         checkbox.innerHTML = '';
     }
@@ -415,6 +441,107 @@ function renderAll() {
         document.getElementById('scheduleSection').style.display = 'block';
         renderSchedule();
     }
+}
+
+// ===== Exertion Rating Functions =====
+function showRatingModal(taskIndex, taskName) {
+    currentRatingTaskIndex = taskIndex;
+
+    // Update modal content
+    document.getElementById('ratingTaskName').textContent = `"${taskName}"`;
+
+    // Reset slider to middle value
+    document.getElementById('exertionSlider').value = 5;
+    document.getElementById('exertionValue').textContent = '5';
+
+    // Show modal with animation
+    const overlay = document.getElementById('ratingOverlay');
+    overlay.classList.remove('hidden');
+    setTimeout(() => overlay.classList.add('show'), 10);
+}
+
+function hideRatingModal() {
+    const overlay = document.getElementById('ratingOverlay');
+    overlay.classList.remove('show');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+    currentRatingTaskIndex = null;
+}
+
+function submitRating() {
+    if (currentRatingTaskIndex === null) return;
+
+    const exertion = parseInt(document.getElementById('exertionSlider').value);
+    const item = appData.generatedSchedule[currentRatingTaskIndex];
+
+    // Store rating
+    const rating = {
+        taskName: item.title,
+        exertion: exertion,
+        timestamp: new Date().toISOString(),
+        taskIndex: currentRatingTaskIndex
+    };
+
+    appData.exertionRatings.push(rating);
+    saveToStorage();
+
+    hideRatingModal();
+
+    // Check for consecutive high exertion
+    checkConsecutiveHighExertion();
+}
+
+function skipRating() {
+    hideRatingModal();
+}
+
+function checkConsecutiveHighExertion() {
+    // Get last 3 ratings
+    const recentRatings = appData.exertionRatings.slice(-3);
+
+    // Check if we have at least 3 ratings
+    if (recentRatings.length < 3) return;
+
+    // Check if all 3 are >= 7
+    const allHigh = recentRatings.every(r => r.exertion >= 7);
+
+    if (allHigh) {
+        // Show break prompt after a short delay
+        setTimeout(() => {
+            showBreakPrompt();
+        }, 500);
+    }
+}
+
+function showBreakPrompt() {
+    // Create a temporary notification
+    const scheduleOutput = document.getElementById('scheduleOutput');
+    const prompt = document.createElement('div');
+    prompt.className = 'break-prompt';
+    prompt.innerHTML = `
+        <div class="break-prompt-icon">⚠️</div>
+        <div class="break-prompt-content">
+            <div class="break-prompt-title">You've been working hard!</div>
+            <div class="break-prompt-message">You've completed 3 consecutive high-effort tasks. Consider taking a longer break to recharge.</div>
+        </div>
+    `;
+
+    // Insert at the top of the schedule
+    scheduleOutput.insertBefore(prompt, scheduleOutput.firstChild);
+
+    // Auto-remove after 8 seconds
+    setTimeout(() => {
+        prompt.style.opacity = '0';
+        prompt.style.transition = 'opacity 0.5s';
+        setTimeout(() => prompt.remove(), 500);
+    }, 8000);
+}
+
+function getAverageRecentExertion(count = 3) {
+    if (appData.exertionRatings.length === 0) return 0;
+
+    const recentRatings = appData.exertionRatings.slice(-count);
+    const sum = recentRatings.reduce((acc, r) => acc + r.exertion, 0);
+    return sum / recentRatings.length;
 }
 
 // ===== Keyboard Shortcuts =====

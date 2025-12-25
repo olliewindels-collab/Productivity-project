@@ -18,14 +18,19 @@ const START_HOUR = 9;               // Default schedule start time (9 AM)
  * @param {Array} priorities - Today's priority tasks with estimates
  * @param {Array} obligations - Fixed time blocks that cannot be moved
  * @param {Array} longTermPriorities - Ordered list of long-term priorities (higher order = more important)
+ * @param {Array} exertionRatings - Historical exertion ratings from completed tasks
  * @returns {Array} - Scheduled items with start/end times
  */
-function createOptimizedSchedule(priorities, obligations, longTermPriorities = []) {
+function createOptimizedSchedule(priorities, obligations, longTermPriorities = [], exertionRatings = []) {
     const schedule = [];
 
     // Start at 9 AM today
     let currentTime = getTodayAt(START_HOUR, 0);
     let workTimeSinceLastLongBreak = 0; // Track time for ultradian rhythm
+
+    // Calculate average recent exertion to adjust break frequency
+    const avgExertion = calculateAverageExertion(exertionRatings, 3);
+    const breakAdjustmentFactor = getBreakAdjustmentFactor(avgExertion);
 
     // Sort obligations by start time
     const sortedObligations = [...obligations].sort((a, b) => {
@@ -132,10 +137,15 @@ function createOptimizedSchedule(priorities, obligations, longTermPriorities = [
                 let breakDuration;
                 let breakType;
 
-                // Check if we've hit 90 minutes of work (ultradian rhythm)
-                if (workTimeSinceLastLongBreak >= ULTRADIAN_CYCLE_MINUTES) {
+                // Apply break adjustment based on recent exertion
+                const adjustedCycleTime = ULTRADIAN_CYCLE_MINUTES * breakAdjustmentFactor;
+
+                // Check if we've hit adjusted cycle time (ultradian rhythm with exertion adjustment)
+                if (workTimeSinceLastLongBreak >= adjustedCycleTime) {
                     breakDuration = LONG_BREAK_MINUTES;
-                    breakType = 'Long break (90-min cycle complete)';
+                    breakType = breakAdjustmentFactor < 1.0
+                        ? 'Long break (needed based on recent effort)'
+                        : 'Long break (90-min cycle complete)';
                     workTimeSinceLastLongBreak = 0;
                 } else {
                     breakDuration = SHORT_BREAK_MINUTES;
@@ -251,4 +261,45 @@ function findLongTermPriorityMatch(taskName, longTermPriorities) {
     }
 
     return -1; // No match
+}
+
+/**
+ * Calculate average exertion from recent ratings
+ * @param {Array} exertionRatings - Array of exertion rating objects
+ * @param {number} count - Number of recent ratings to average
+ * @returns {number} - Average exertion (0 if no ratings)
+ */
+function calculateAverageExertion(exertionRatings, count = 3) {
+    if (!exertionRatings || exertionRatings.length === 0) return 0;
+
+    const recentRatings = exertionRatings.slice(-count);
+    const sum = recentRatings.reduce((acc, r) => acc + r.exertion, 0);
+    return sum / recentRatings.length;
+}
+
+/**
+ * Get break adjustment factor based on average exertion
+ * Lower factor = more frequent breaks (shorter cycle time)
+ * @param {number} avgExertion - Average exertion rating (1-10)
+ * @returns {number} - Adjustment factor for break scheduling
+ */
+function getBreakAdjustmentFactor(avgExertion) {
+    // No ratings yet - use default schedule
+    if (avgExertion === 0) return 1.0;
+
+    // Break adjustment based on exertion level:
+    // 1-4 (Low): Keep default (100% of normal cycle)
+    // 5-6 (Moderate): Shorten by 15% (85% of normal cycle)
+    // 7-8 (High): Shorten by 25% (75% of normal cycle)
+    // 9-10 (Very High): Shorten by 50% (50% of normal cycle)
+
+    if (avgExertion <= 4) {
+        return 1.0; // Default schedule
+    } else if (avgExertion <= 6) {
+        return 0.85; // 15% reduction
+    } else if (avgExertion <= 8) {
+        return 0.75; // 25% reduction
+    } else {
+        return 0.50; // 50% reduction
+    }
 }
