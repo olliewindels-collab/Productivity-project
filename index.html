@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Schedule Optimizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>📅 Daily Schedule Optimizer</h1>
+            <p class="subtitle">Manage your time with science-backed focus techniques</p>
+        </header>
+
+        <!-- Input Section -->
+        <section class="input-section">
+            <!-- Long-term Priorities -->
+            <div class="card">
+                <h2>Long-term Priorities</h2>
+                <p class="description">Ongoing goals you're working toward</p>
+                <div id="longTermList" class="priority-list"></div>
+                <div class="input-group">
+                    <input type="text" id="longTermInput" placeholder="e.g., Learn Spanish, Exercise regularly">
+                    <button onclick="addLongTermPriority()" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+
+            <!-- Today's Priorities -->
+            <div class="card">
+                <h2>Today's Priorities</h2>
+                <p class="description">Tasks with deadlines and time estimates</p>
+                <div id="todayPriorityList" class="priority-list"></div>
+                <div class="input-group">
+                    <input type="text" id="todayTaskInput" placeholder="Task name">
+                    <input type="number" id="todayTimeInput" placeholder="Est. hours" min="0.25" step="0.25" style="width: 120px;">
+                    <input type="datetime-local" id="todayDeadlineInput" style="width: 180px;">
+                    <button onclick="addTodayPriority()" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+
+            <!-- Obligations -->
+            <div class="card">
+                <h2>Fixed Obligations</h2>
+                <p class="description">Commitments that can't be moved</p>
+                <div id="obligationsList" class="priority-list"></div>
+                <div class="input-group">
+                    <input type="text" id="obligationInput" placeholder="e.g., Family hike">
+                    <input type="time" id="obligationStartTime" style="width: 100px;">
+                    <input type="time" id="obligationEndTime" style="width: 100px;">
+                    <button onclick="addObligation()" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button onclick="generateSchedule()" class="btn btn-generate">🚀 Generate My Schedule</button>
+        </section>
+
+        <!-- Schedule Output Section -->
+        <section class="schedule-section" id="scheduleSection" style="display: none;">
+            <div class="card">
+                <div class="schedule-header">
+                    <h2>Your Optimized Schedule</h2>
+                    <button onclick="clearSchedule()" class="btn btn-secondary">Edit Inputs</button>
+                </div>
+                <div class="info-box">
+                    <strong>💡 About your schedule:</strong>
+                    This schedule uses the Pomodoro Technique (25-min work blocks with 5-min breaks) and respects ultradian rhythms with longer breaks every 90 minutes. This helps maintain focus and prevent burnout.
+                </div>
+                <div id="scheduleOutput" class="schedule-list"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="schedule.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+/* ===== CSS Variables for Easy Theming ===== */
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --background: #f8fafc;
+    --card-bg: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Reset and Base Styles ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background-color: var(--background);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* ===== Container ===== */
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* ===== Header ===== */
+header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* ===== Card Components ===== */
+.card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+/* ===== Input Groups ===== */
+.input-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="time"],
+input[type="datetime-local"] {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* ===== Buttons ===== */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #475569;
+}
+
+.btn-generate {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary-color), #7c3aed);
+    color: white;
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-timer {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+/* ===== Priority/Obligation Lists ===== */
+.priority-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.priority-item,
+.obligation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--background);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.priority-item-content {
+    flex: 1;
+}
+
+.priority-item-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.priority-item-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.priority-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ===== Schedule Section ===== */
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.info-box {
+    background-color: #eff6ff;
+    border-left: 4px solid var(--primary-color);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #1e40af;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background-color: var(--background);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    gap: 12px;
+}
+
+.schedule-item.break {
+    border-left-color: var(--success-color);
+    background-color: #f0fdf4;
+}
+
+.schedule-item.obligation {
+    border-left-color: #f59e0b;
+    background-color: #fffbeb;
+}
+
+.schedule-time {
+    font-weight: 600;
+    color: var(--primary-color);
+    min-width: 140px;
+    font-size: 0.95rem;
+}
+
+.schedule-task {
+    flex: 1;
+}
+
+.schedule-task-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.schedule-task-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.timer-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.timer-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    min-width: 80px;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 640px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        width: 100%;
+    }
+
+    .schedule-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .schedule-time {
+        min-width: auto;
+    }
+
+    .timer-controls {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .schedule-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .schedule-header .btn-secondary {
+        width: 100%;
+    }
+}
+
+/* ===== Utility Classes ===== */
+.hidden {
+    display: none !important;
+}
+
+.text-muted {
+    color: var(--text-secondary);
+}
