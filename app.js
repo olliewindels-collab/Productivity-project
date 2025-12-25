@@ -12,6 +12,16 @@ let appData = {
 document.addEventListener('DOMContentLoaded', () => {
     loadFromStorage();
     renderAll();
+
+    // Initialize time-of-day slider
+    const timeSlider = document.getElementById('timeOfDaySlider');
+    const timeLabel = document.getElementById('timeOfDayLabel');
+
+    timeSlider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value);
+        const labels = ['Morning', 'Anytime', 'Evening'];
+        timeLabel.textContent = `Preferred time: ${labels[value]}`;
+    });
 });
 
 // ===== LocalStorage Functions =====
@@ -61,8 +71,15 @@ function renderLongTermPriorities() {
         return;
     }
 
-    container.innerHTML = appData.longTermPriorities.map(priority => `
+    container.innerHTML = appData.longTermPriorities.map((priority, index) => `
         <div class="priority-item">
+            <div class="priority-order">
+                <div class="priority-number">#${index + 1}</div>
+                <div class="priority-controls">
+                    ${index > 0 ? `<button onclick="moveLongTermPriority(${index}, -1)" class="btn-move">▲</button>` : '<span style="height: 18px;"></span>'}
+                    ${index < appData.longTermPriorities.length - 1 ? `<button onclick="moveLongTermPriority(${index}, 1)" class="btn-move">▼</button>` : '<span style="height: 18px;"></span>'}
+                </div>
+            </div>
             <div class="priority-item-content">
                 <div class="priority-item-title">${escapeHtml(priority.text)}</div>
             </div>
@@ -73,14 +90,28 @@ function renderLongTermPriorities() {
     `).join('');
 }
 
+function moveLongTermPriority(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= appData.longTermPriorities.length) return;
+
+    // Swap items
+    [appData.longTermPriorities[index], appData.longTermPriorities[newIndex]] =
+        [appData.longTermPriorities[newIndex], appData.longTermPriorities[index]];
+
+    saveToStorage();
+    renderLongTermPriorities();
+}
+
 // ===== Today's Priority Functions =====
 function addTodayPriority() {
     const taskInput = document.getElementById('todayTaskInput');
     const timeInput = document.getElementById('todayTimeInput');
+    const timeOfDaySlider = document.getElementById('timeOfDaySlider');
     const deadlineInput = document.getElementById('todayDeadlineInput');
 
     const task = taskInput.value.trim();
     const estimatedHours = parseFloat(timeInput.value);
+    const timeOfDay = parseInt(timeOfDaySlider.value); // 0=Morning, 1=Anytime, 2=Evening
     const deadline = deadlineInput.value;
 
     if (!task) {
@@ -97,12 +128,15 @@ function addTodayPriority() {
         id: Date.now(),
         task: task,
         estimatedHours: estimatedHours,
+        timeOfDay: timeOfDay,
         deadline: deadline || null,
         createdAt: new Date().toISOString()
     });
 
     taskInput.value = '';
     timeInput.value = '';
+    timeOfDaySlider.value = 1; // Reset to "Anytime"
+    document.getElementById('timeOfDayLabel').textContent = 'Preferred time: Anytime';
     deadlineInput.value = '';
     saveToStorage();
     renderTodayPriorities();
@@ -123,7 +157,10 @@ function renderTodayPriorities() {
     }
 
     container.innerHTML = appData.todayPriorities.map(priority => {
-        let metaText = `Estimated: ${priority.estimatedHours}h`;
+        const timeLabels = ['Morning', 'Anytime', 'Evening'];
+        const timeOfDay = priority.timeOfDay !== undefined ? timeLabels[priority.timeOfDay] : 'Anytime';
+
+        let metaText = `Estimated: ${priority.estimatedHours}h | Preferred: ${timeOfDay}`;
         if (priority.deadline) {
             const deadlineDate = new Date(priority.deadline);
             metaText += ` | Due: ${deadlineDate.toLocaleString()}`;
@@ -215,7 +252,8 @@ function generateSchedule() {
     // Call the schedule generation algorithm from schedule.js
     appData.generatedSchedule = createOptimizedSchedule(
         appData.todayPriorities,
-        appData.obligations
+        appData.obligations,
+        appData.longTermPriorities
     );
 
     saveToStorage();
@@ -245,30 +283,47 @@ function renderSchedule() {
     container.innerHTML = appData.generatedSchedule.map((item, index) => {
         const isBreak = item.type === 'break';
         const isObligation = item.type === 'obligation';
-        const itemClass = isBreak ? 'break' : (isObligation ? 'obligation' : '');
 
         let timerControls = '';
-        if (item.type === 'task') {
+        if (item.type === 'task' || item.type === 'break') {
             const timerId = `timer-${index}`;
             timerControls = `
                 <div class="timer-controls">
-                    <div class="timer-display" id="${timerId}-display">00:00:00</div>
+                    <div class="timer-display" id="${timerId}-display">00:00</div>
                     <button onclick="toggleTimer(${index})" class="btn btn-timer" id="${timerId}-btn">Start</button>
                 </div>
             `;
         }
 
+        // Checklist format - no specific times
+        let borderClass = '';
+        if (isBreak) borderClass = 'break';
+        else if (isObligation) borderClass = 'obligation';
+
         return `
-            <div class="schedule-item ${itemClass}">
-                <div class="schedule-time">${item.startTime} - ${item.endTime}</div>
-                <div class="schedule-task">
-                    <div class="schedule-task-title">${escapeHtml(item.title)}</div>
-                    ${item.description ? `<div class="schedule-task-meta">${escapeHtml(item.description)}</div>` : ''}
+            <div class="checklist-item schedule-item ${borderClass}">
+                <div class="checklist-checkbox" onclick="toggleCheckbox(this)"></div>
+                <div class="checklist-content">
+                    <div class="checklist-title">${escapeHtml(item.title)}</div>
+                    <div class="checklist-meta">
+                        ${item.description ? escapeHtml(item.description) : ''}
+                        ${item.durationMinutes ? ` • ${item.durationMinutes} min` : ''}
+                    </div>
                 </div>
                 ${timerControls}
             </div>
         `;
     }).join('');
+}
+
+function toggleCheckbox(checkbox) {
+    checkbox.classList.toggle('checked');
+    // Add checkmark when checked
+    if (checkbox.classList.contains('checked')) {
+        checkbox.innerHTML = '✓';
+    } else {
+        checkbox.innerHTML = '';
+    }
 }
 
 // ===== Timer Functions =====
@@ -328,10 +383,9 @@ function toggleTimer(index) {
 
 // ===== Utility Functions =====
 function formatElapsedTime(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+    return `${pad(minutes)}:${pad(secs)}`;
 }
 
 function pad(num) {

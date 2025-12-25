@@ -17,9 +17,10 @@ const START_HOUR = 9;               // Default schedule start time (9 AM)
  * Main function to create an optimized schedule
  * @param {Array} priorities - Today's priority tasks with estimates
  * @param {Array} obligations - Fixed time blocks that cannot be moved
+ * @param {Array} longTermPriorities - Ordered list of long-term priorities (higher order = more important)
  * @returns {Array} - Scheduled items with start/end times
  */
-function createOptimizedSchedule(priorities, obligations) {
+function createOptimizedSchedule(priorities, obligations, longTermPriorities = []) {
     const schedule = [];
 
     // Start at 9 AM today
@@ -31,14 +32,32 @@ function createOptimizedSchedule(priorities, obligations) {
         return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
     });
 
-    // Sort priorities by deadline (urgent first), then by creation time
+    // Sort priorities with multiple criteria:
+    // 1. Deadline urgency (tasks with imminent deadlines first)
+    // 2. Long-term priority alignment (tasks matching higher-priority long-term goals come first)
+    // 3. Time of day preference (for better scheduling later)
     const sortedPriorities = [...priorities].sort((a, b) => {
+        // First, prioritize by deadline
         if (a.deadline && b.deadline) {
-            return new Date(a.deadline) - new Date(b.deadline);
+            const timeDiff = new Date(a.deadline) - new Date(b.deadline);
+            if (timeDiff !== 0) return timeDiff;
         }
-        if (a.deadline) return -1;
-        if (b.deadline) return 1;
-        return 0;
+        if (a.deadline && !b.deadline) return -1;
+        if (!a.deadline && b.deadline) return 1;
+
+        // Second, check long-term priority alignment
+        // Tasks that match higher-priority long-term goals get scheduled earlier
+        const aLongTermIndex = findLongTermPriorityMatch(a.task, longTermPriorities);
+        const bLongTermIndex = findLongTermPriorityMatch(b.task, longTermPriorities);
+
+        if (aLongTermIndex !== -1 && bLongTermIndex !== -1) {
+            // Both match long-term priorities - lower index (higher priority) comes first
+            return aLongTermIndex - bLongTermIndex;
+        }
+        if (aLongTermIndex !== -1) return -1; // a matches, b doesn't
+        if (bLongTermIndex !== -1) return 1;  // b matches, a doesn't
+
+        return 0; // Equal priority
     });
 
     // Track which obligations we've added
@@ -204,4 +223,32 @@ function formatTimeFromDate(date) {
  */
 function addMinutes(date, minutes) {
     return new Date(date.getTime() + (minutes * 60 * 1000));
+}
+
+/**
+ * Find if a task matches any long-term priority
+ * Returns the index of the matching long-term priority (lower = higher priority)
+ * Returns -1 if no match found
+ */
+function findLongTermPriorityMatch(taskName, longTermPriorities) {
+    if (!longTermPriorities || longTermPriorities.length === 0) return -1;
+
+    const taskLower = taskName.toLowerCase();
+
+    for (let i = 0; i < longTermPriorities.length; i++) {
+        const priorityLower = longTermPriorities[i].text.toLowerCase();
+
+        // Check for keyword matches (split by common separators)
+        const priorityWords = priorityLower.split(/[\s,]+/).filter(w => w.length > 3);
+        const taskWords = taskLower.split(/[\s,]+/);
+
+        // If any significant word from the priority appears in the task, consider it a match
+        for (const word of priorityWords) {
+            if (taskWords.some(tw => tw.includes(word) || word.includes(tw))) {
+                return i; // Return the index (position in priority list)
+            }
+        }
+    }
+
+    return -1; // No match
 }
